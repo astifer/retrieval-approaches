@@ -131,8 +131,7 @@ def train_model_with_hard_negatives(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True,
-        report_to=None
+        show_progress_bar=False
     )
     
     return model
