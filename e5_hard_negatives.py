@@ -136,6 +136,7 @@ def train_model_with_hard_negatives(
     
     return model
 
+@torch.no_grad()
 def evaluate_model(
     model: SentenceTransformer,
     test_questions: list,
@@ -224,6 +225,7 @@ def main():
         epochs=args.epochs,
         device=args.device
     )
+    model.eval()
     results = evaluate_model(
         model,
         test_questions,

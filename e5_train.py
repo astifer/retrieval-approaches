@@ -131,6 +131,7 @@ def train_triplet_model(
     
     return model
 
+@torch.no_grad()
 def evaluate_model(
     model: SentenceTransformer,
     test_questions: list,
