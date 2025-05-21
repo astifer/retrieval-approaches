@@ -51,6 +51,14 @@ python e5_hard_negatives.py --device cpu
 |MRR | 0.7916|
 
 
+# e5 train
+|metric| value|
+| ---- | ------|
+|Recall@1| 0.|
+|Recall@3 |0.|
+|Recall@10 |0.|
+|MRR | 0.|
+
 # e5 hard negatives
 |metric| value|
 | ---- | ------|
