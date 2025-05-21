@@ -21,10 +21,10 @@ pip install -r requirements.txt
 2. Run experiments:
 ```bash
 # Run on GPU (default if available)
-python tfidf_baseline.py  # Task 2
-python e5_baseline.py     # Task 3
-python e5_train.py        # Task 4
-python e5_hard_negatives.py  # Task 5
+python tfidf_baseline.py  
+python e5_baseline.py     
+python e5_train.py --batch_size 128 --epochs 2 --n_pairs 50000
+python e5_hard_negatives.py  
 
 # Run on CPU
 python e5_baseline.py --device cpu

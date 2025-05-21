@@ -34,11 +34,13 @@ def main():
     parser = argparse.ArgumentParser(description='Run E5 model baseline')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
                       help='Device to use for encoding (cuda or cpu)')
+    parser.add_argument('--max_samples', type=int, default=100000,
+                      help='Maximum number of samples to use')
     args = parser.parse_args()
     
     # Load and split data
     print("Loading and splitting data...")
-    data = load_and_split_data()
+    data = load_and_split_data(max_samples=args.max_samples)
     
     # Prepare data
     train_questions = [item["question"] for item in data["train"]]

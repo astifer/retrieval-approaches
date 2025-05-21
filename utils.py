@@ -5,33 +5,42 @@ from typing import Tuple, List, Dict
 import numpy as np
 from tqdm import tqdm
 
-def load_and_split_data(test_size: float = 0.2, seed: int = 42) -> Tuple[Dict, Dict]:
+def load_and_split_data(test_size: float = 0.2, seed: int = 42, max_samples: int = 100000) -> Tuple[Dict, Dict]:
     """
     Load Natural Questions dataset and split into train/test sets.
     
     Args:
         test_size: Proportion of data to use for testing
         seed: Random seed for reproducibility
+        max_samples: Maximum number of samples to use
         
     Returns:
         Tuple of (train_data, test_data) dictionaries
     """
     # Load dataset
+    print("Loading dataset...")
     dataset = load_dataset("sentence-transformers/natural-questions")
-
-    # Convert to list of dictionaries for easier processing
-    data = [{"question": item["query"], "answer": item["answer"]} 
-            for item in dataset["train"]][:100]
     
-    print(f"Length of dataset: {len(data)}")
+    # Convert to list of dictionaries for easier processing
+    print("Processing data...")
+    data = [{"question": item["query"], "answer": item["answer"]} 
+            for item in dataset["train"]]
+    
+    # Take a subset if max_samples is specified
+    if max_samples and max_samples < len(data):
+        np.random.seed(seed)
+        indices = np.random.choice(len(data), max_samples, replace=False)
+        data = [data[i] for i in indices]
     
     # Split into train/test
+    print("Splitting data...")
     train_data, test_data = train_test_split(
         data, 
         test_size=test_size, 
         random_state=seed
     )
     
+    print(f"Using {len(train_data)} training samples and {len(test_data)} test samples")
     return {"train": train_data, "test": test_data}
 
 def compute_cosine_similarity(query_embeddings: np.ndarray, 

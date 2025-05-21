@@ -114,8 +114,13 @@ def train_model_with_hard_negatives(
         for a, p, n in zip(anchors, positives, negatives)
     ]
     
-    # Create data loader
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
+    # Create data loader with pin_memory for faster GPU transfer
+    train_dataloader = DataLoader(
+        train_examples, 
+        shuffle=True, 
+        batch_size=batch_size,
+        pin_memory=True if device == 'cuda' else False
+    )
     
     # Define loss function
     train_loss = losses.TripletLoss(model)
@@ -126,8 +131,7 @@ def train_model_with_hard_negatives(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True,
-        device=device
+        show_progress_bar=True
     )
     
     return model
@@ -187,11 +191,19 @@ def main():
     parser = argparse.ArgumentParser(description='Train E5 model with hard negatives')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
                       help='Device to use for training (cuda or cpu)')
+    parser.add_argument('--batch_size', type=int, default=64,
+                      help='Batch size for training')
+    parser.add_argument('--epochs', type=int, default=2,
+                      help='Number of training epochs')
+    parser.add_argument('--n_triplets', type=int, default=50000,
+                      help='Number of training triplets to create')
+    parser.add_argument('--max_samples', type=int, default=100000,
+                      help='Maximum number of samples to use')
     args = parser.parse_args()
     
     # Load and split data
     print("Loading and splitting data...")
-    data = load_and_split_data()
+    data = load_and_split_data(max_samples=args.max_samples)
     
     # Prepare data
     train_questions = [item["question"] for item in data["train"]]
@@ -202,22 +214,28 @@ def main():
     # Train and evaluate model with hard negatives
     print("\nTraining with hard negatives...")
     model = SentenceTransformer('intfloat/multilingual-e5-base')
+    model.to(args.device)
     model = train_model_with_hard_negatives(
         model,
         train_questions,
         train_answers,
+        n_triplets=args.n_triplets,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
         device=args.device
     )
     results = evaluate_model(
         model,
         test_questions,
         test_answers,
+        batch_size=args.batch_size,
         device=args.device
     )
     
     # Save results
     with open("e5_hard_negatives_results.json", "w") as f:
         json.dump(results, f, indent=4)
+    del model
     
     # Print results
     print("\nResults:")

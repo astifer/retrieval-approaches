@@ -4,11 +4,18 @@ from sklearn.metrics.pairwise import cosine_similarity
 from utils import load_and_split_data, compute_cosine_similarity, get_top_k_predictions
 from metrics import batch_recall_at_k, batch_mrr
 import json
+import argparse
 
 def main():
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Run TF-IDF baseline')
+    parser.add_argument('--max_samples', type=int, default=100000,
+                      help='Maximum number of samples to use')
+    args = parser.parse_args()
+    
     # Load and split data
     print("Loading and splitting data...")
-    data = load_and_split_data()
+    data = load_and_split_data(max_samples=args.max_samples)
     
     # Prepare data
     train_questions = [item["question"] for item in data["train"]]

@@ -51,8 +51,13 @@ def train_contrastive_model(
         for q, a, l in zip(pairs_questions, pairs_answers, labels)
     ]
     
-    # Create data loader
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
+    # Create data loader with pin_memory for faster GPU transfer
+    train_dataloader = DataLoader(
+        train_examples, 
+        shuffle=True, 
+        batch_size=batch_size,
+        pin_memory=True if device == 'cuda' else False
+    )
     
     # Define loss function
     train_loss = losses.ContrastiveLoss(model)
@@ -104,8 +109,13 @@ def train_triplet_model(
         for a, p, n in zip(anchors, positives, negatives)
     ]
     
-    # Create data loader
-    train_dataloader = DataLoader(train_examples, shuffle=True, batch_size=batch_size)
+    # Create data loader with pin_memory for faster GPU transfer
+    train_dataloader = DataLoader(
+        train_examples, 
+        shuffle=True, 
+        batch_size=batch_size,
+        pin_memory=True if device == 'cuda' else False
+    )
     
     # Define loss function
     train_loss = losses.TripletLoss(model)
@@ -176,11 +186,19 @@ def main():
     parser = argparse.ArgumentParser(description='Train E5 model with different loss functions')
     parser.add_argument('--device', type=str, default='cuda' if torch.cuda.is_available() else 'cpu',
                       help='Device to use for training (cuda or cpu)')
+    parser.add_argument('--batch_size', type=int, default=64,
+                      help='Batch size for training')
+    parser.add_argument('--epochs', type=int, default=2,
+                      help='Number of training epochs')
+    parser.add_argument('--n_pairs', type=int, default=50000,
+                      help='Number of training pairs to create')
+    parser.add_argument('--max_samples', type=int, default=100000,
+                      help='Maximum number of samples to use')
     args = parser.parse_args()
     
     # Load and split data
     print("Loading and splitting data...")
-    data = load_and_split_data()
+    data = load_and_split_data(max_samples=args.max_samples)  # Use 100k samples
     
     # Prepare data
     train_questions = [item["question"] for item in data["train"]]
@@ -196,12 +214,16 @@ def main():
         contrastive_model,
         train_questions,
         train_answers,
+        n_pairs=args.n_pairs,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
         device=args.device
     )
     contrastive_results = evaluate_model(
         contrastive_model,
         test_questions,
         test_answers,
+        batch_size=args.batch_size,
         device=args.device
     )
     
@@ -209,6 +231,8 @@ def main():
     with open("e5_contrastive_results.json", "w") as f:
         json.dump(contrastive_results, f, indent=4)
     
+    del contrastive_model
+
     # Train and evaluate Triplet Loss model
     print("\nTraining with Triplet Loss...")
     triplet_model = SentenceTransformer('intfloat/multilingual-e5-base')
@@ -217,18 +241,24 @@ def main():
         triplet_model,
         train_questions,
         train_answers,
+        n_triplets=args.n_pairs,
+        batch_size=args.batch_size,
+        epochs=args.epochs,
         device=args.device
     )
     triplet_results = evaluate_model(
         triplet_model,
         test_questions,
         test_answers,
+        batch_size=args.batch_size,
         device=args.device
     )
     
     # Save Triplet Loss results
     with open("e5_triplet_results.json", "w") as f:
         json.dump(triplet_results, f, indent=4)
+    
+    del triplet_model
     
     # Print results
     print("\nContrastive Loss Results:")
