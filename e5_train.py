@@ -68,7 +68,8 @@ def train_contrastive_model(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True
+        show_progress_bar=True,
+        report_to=None
     )
     
     return model
@@ -126,7 +127,8 @@ def train_triplet_model(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True
+        show_progress_bar=True,
+        report_to=None
     )
     
     return model
