@@ -41,3 +41,11 @@ python e5_hard_negatives.py --device cpu
 |Recall@3 |0.5707|
 |Recall@10 |0.7535|
 |MRR | 0.4828|
+
+# e5 baseline
+|metric| value|
+| ---- | ------|
+|Recall@1| 0.6868|
+|Recall@3 |0.8837|
+|Recall@10 |0.9655|
+|MRR | 0.7916|

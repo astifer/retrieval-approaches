@@ -21,7 +21,7 @@ def load_and_split_data(test_size: float = 0.2, seed: int = 42) -> Tuple[Dict, D
 
     # Convert to list of dictionaries for easier processing
     data = [{"question": item["query"], "answer": item["answer"]} 
-            for item in dataset["train"]]
+            for item in dataset["train"]][:100]
     
     print(f"Length of dataset: {len(data)}")
     

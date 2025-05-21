@@ -63,8 +63,7 @@ def train_contrastive_model(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True,
-        device=device
+        show_progress_bar=True
     )
     
     return model
@@ -117,8 +116,7 @@ def train_triplet_model(
         train_objectives=[(train_dataloader, train_loss)],
         epochs=epochs,
         warmup_steps=100,
-        show_progress_bar=True,
-        device=device
+        show_progress_bar=True
     )
     
     return model
@@ -193,6 +191,7 @@ def main():
     # Train and evaluate Contrastive Loss model
     print("\nTraining with Contrastive Loss...")
     contrastive_model = SentenceTransformer('intfloat/multilingual-e5-base')
+    contrastive_model.to(args.device)
     contrastive_model = train_contrastive_model(
         contrastive_model,
         train_questions,
@@ -213,6 +212,7 @@ def main():
     # Train and evaluate Triplet Loss model
     print("\nTraining with Triplet Loss...")
     triplet_model = SentenceTransformer('intfloat/multilingual-e5-base')
+    triplet_model.to(args.device)
     triplet_model = train_triplet_model(
         triplet_model,
         train_questions,
