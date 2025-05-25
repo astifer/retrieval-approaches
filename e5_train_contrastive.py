@@ -29,7 +29,6 @@ def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small
         logging_steps=50,
         save_total_limit=1,
         remove_unused_columns=False,
-        device=device
     )
     trainer = Trainer(
         model=model,
