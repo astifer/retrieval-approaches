@@ -3,8 +3,11 @@ from torch import nn
 import torch
 from typing import Optional, Union
 import numpy as np
+import argparse
+import json
 
 from metrics import batch_recall_at_k, batch_mrr
+from models import TripletModel, ContrastiveModel
 
 from utils import (
     load_and_split_data,
@@ -15,40 +18,10 @@ from utils import (
     create_contrastive_dataset
 )
 
-class SentenceEmbeddingConfig(PretrainedConfig):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
-class ContrastiveModel(PreTrainedModel):
-    def __init__(self, model_name: str, config: Optional[PretrainedConfig] = None):
-        if config is None:
-            config = SentenceEmbeddingConfig()
-        super().__init__(config)
-        self.encoder = AutoModel.from_pretrained(model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.similarity = nn.CosineSimilarity(dim=1)
-
-    def encode(self, texts, device='cuda'):
-        tokens = self.tokenizer(texts, padding=True, truncation=True, return_tensors="pt").to(device)
-        outputs = self.encoder(**tokens)
-        embeddings = outputs.last_hidden_state[:, 0]  # CLS token
-        return embeddings
-
-    def forward(self, input_ids=None, attention_mask=None, labels=None, input_ids_2=None, attention_mask_2=None):
-        outputs_1 = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
-        outputs_2 = self.encoder(input_ids=input_ids_2, attention_mask=attention_mask_2)
-        emb_1 = outputs_1.last_hidden_state[:, 0]
-        emb_2 = outputs_2.last_hidden_state[:, 0]
-
-        similarities = self.similarity(emb_1, emb_2)
-        if labels is not None:
-            loss_fn = nn.MSELoss()
-            loss = loss_fn(similarities, labels)
-            return {'loss': loss, 'similarity': similarities}
-        return {'similarity': similarities}
 
 @torch.no_grad()
-def evaluate_model(model, test_questions, test_answers, device='cuda', batch_size=32):
+def evaluate_model(model, test_questions, test_answers, device='cuda', batch_size=8):
+    print(f"Evaluationg model...")
     model.eval()
     model = model.to(device)
     
@@ -66,7 +39,9 @@ def evaluate_model(model, test_questions, test_answers, device='cuda', batch_siz
         a_embeddings.append(a_emb.cpu())
     a_embeddings = torch.cat(a_embeddings).numpy()
 
+    print("Computing cosine similarity..")
     sim_matrix = compute_cosine_similarity(q_embeddings, a_embeddings)
+    print("Getting top k predictions...")
     predictions = get_top_k_predictions(sim_matrix, k=10)
     ground_truth = np.arange(len(test_questions))
 
@@ -78,7 +53,7 @@ def evaluate_model(model, test_questions, test_answers, device='cuda', batch_siz
     }
 
 
-def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./contrastive_model', batch_size=32, epochs=3):
+def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=3):
     model = ContrastiveModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -94,17 +69,15 @@ def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-base'
         args=training_args,
         train_dataset=train_dataset,
     )
+    print(f"Train model...")
     trainer.train()
     return model
 
 def main():
-    from utils import load_and_split_data, create_contrastive_pairs
-    import argparse
-    import json
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--epochs', type=int, default=2)
     parser.add_argument('--n_pairs', type=int, default=50000)
     parser.add_argument('--max_samples', type=int, default=100000)
@@ -117,12 +90,12 @@ def main():
     test_a = [d['answer'] for d in data['test']]
 
     q_pairs, a_pairs, labels = create_contrastive_pairs(train_q, train_a, args.n_pairs)
-    tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-base')
+    tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-small')
     dataset = create_contrastive_dataset(q_pairs, a_pairs, labels, tokenizer)
-
     model = train_with_trainer(dataset, batch_size=args.batch_size, epochs=args.epochs)
 
     results = evaluate_model(model, test_q, test_a, device=args.device, batch_size=args.batch_size)
+    print(results)
     with open("contrastive_trainer_results.json", "w") as f:
         json.dump(results, f, indent=4)
 

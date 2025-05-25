@@ -8,18 +8,6 @@ import numpy as np
 import argparse
 
 def encode_texts(model: SentenceTransformer, texts: list, batch_size: int = 32, device: str = 'cuda') -> torch.Tensor:
-    """
-    Encode texts using the E5 model.
-    
-    Args:
-        model: E5 model
-        texts: List of texts to encode
-        batch_size: Batch size for encoding
-        device: Device to use for encoding ('cuda' or 'cpu')
-        
-    Returns:
-        Tensor of shape (n_texts, embedding_dim)
-    """
     embeddings = []
     for i in tqdm(range(0, len(texts), batch_size)):
         batch = texts[i:i + batch_size]

@@ -6,17 +6,6 @@ import numpy as np
 from tqdm import tqdm
 
 def load_and_split_data(test_size: float = 0.2, seed: int = 42, max_samples: int = 100000) -> Tuple[Dict, Dict]:
-    """
-    Load Natural Questions dataset and split into train/test sets.
-    
-    Args:
-        test_size: Proportion of data to use for testing
-        seed: Random seed for reproducibility
-        max_samples: Maximum number of samples to use
-        
-    Returns:
-        Tuple of (train_data, test_data) dictionaries
-    """
     # Load dataset
     print("Loading dataset...")
     dataset = load_dataset("sentence-transformers/natural-questions")
@@ -45,16 +34,6 @@ def load_and_split_data(test_size: float = 0.2, seed: int = 42, max_samples: int
 
 def compute_cosine_similarity(query_embeddings: np.ndarray, 
                             doc_embeddings: np.ndarray) -> np.ndarray:
-    """
-    Compute cosine similarity between query and document embeddings.
-    
-    Args:
-        query_embeddings: Query embeddings of shape (n_queries, embedding_dim)
-        doc_embeddings: Document embeddings of shape (n_docs, embedding_dim)
-        
-    Returns:
-        Similarity matrix of shape (n_queries, n_docs)
-    """
     # Normalize embeddings
     query_norm = query_embeddings / np.linalg.norm(query_embeddings, axis=1, keepdims=True)
     doc_norm = doc_embeddings / np.linalg.norm(doc_embeddings, axis=1, keepdims=True)
@@ -65,33 +44,11 @@ def compute_cosine_similarity(query_embeddings: np.ndarray,
     return similarity
 
 def get_top_k_predictions(similarity_matrix: np.ndarray, k: int) -> np.ndarray:
-    """
-    Get top-k predictions for each query based on similarity scores.
-    
-    Args:
-        similarity_matrix: Similarity matrix of shape (n_queries, n_docs)
-        k: Number of top predictions to return
-        
-    Returns:
-        Array of shape (n_queries, k) containing indices of top-k documents
-    """
     return np.argsort(similarity_matrix, axis=1)[:, ::-1][:, :k]
 
 def create_contrastive_pairs(questions: List[str], 
                            answers: List[str], 
                            n_pairs: int) -> Tuple[List[str], List[str], List[int]]:
-    """
-    Create contrastive pairs for training.
-    
-    Args:
-        questions: List of questions
-        answers: List of answers
-        n_pairs: Number of pairs to create
-        
-    Returns:
-        Tuple of (questions, answers, labels) where labels are 1 for positive pairs
-        and 0 for negative pairs
-    """
     n_samples = len(questions)
     pairs_questions = []
     pairs_answers = []
@@ -119,17 +76,7 @@ def create_contrastive_pairs(questions: List[str],
 def create_triplet_pairs(questions: List[str], 
                         answers: List[str], 
                         n_triplets: int) -> Tuple[List[str], List[str], List[str]]:
-    """
-    Create triplet pairs for training.
-    
-    Args:
-        questions: List of questions
-        answers: List of answers
-        n_triplets: Number of triplets to create
-        
-    Returns:
-        Tuple of (anchors, positives, negatives)
-    """
+
     n_samples = len(questions)
     anchors = []
     positives = []
