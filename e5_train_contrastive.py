@@ -19,7 +19,8 @@ from utils import (
     evaluate_model
 )
 
-def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=1, device='cuda'):
+def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./contrastive_model', batch_size=8, epochs=1, device='cuda'):
+    print(f"Train model {model_name}...")
     model = ContrastiveModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -56,7 +57,7 @@ def main():
     test_a = [d['answer'] for d in data['test']]
 
     q_pairs, a_pairs, labels = create_contrastive_pairs(train_q, train_a, args.n_pairs)
-    tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-small')
+    tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-base')
     dataset = create_contrastive_dataset(q_pairs, a_pairs, labels, tokenizer)
     
     device = args.device

@@ -54,20 +54,19 @@ python e5_hard_negatives.py --device cpu
 # e5 train contrastive
 |metric| value|
 | ---- | ------|
-|Recall@1| 0.47035|
-|Recall@3 |0.6644|
-|Recall@10 |0.79725|
-|MRR | 0.581|
+|Recall@1| 0.|
+|Recall@3 |0.|
+|Recall@10 |0.|
+|MRR | 0.|
 
 
 # e5 train triplet
 |metric| value|
 | ---- | ------|
-|Recall@1| 0.47035|
-|Recall@3 |0.6644|
-|Recall@10 |0.79725|
-|MRR | 0.581|
-
+|Recall@1| 0.64445|
+|Recall@3 |0.85185|
+|Recall@10 |0.9497|
+|MRR | 0.756|
 
 # e5 hard negatives
 |metric| value|

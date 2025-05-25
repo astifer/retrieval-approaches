@@ -16,8 +16,8 @@ from utils import (
     evaluate_model
 )
 
-def train_triplet_model(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./triplet_model', batch_size=32, epochs=3, device='cuda'):
-    print("Train model...")
+def train_triplet_model(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./triplet_model', batch_size=8, epochs=1, device='cuda'):
+    print(f"Train model {model_name}...")
     model = TripletModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -42,7 +42,7 @@ def main_triplet():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda')
-    parser.add_argument('--batch_size', type=int, default=128)
+    parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--n_triples', type=int, default=50000)
     parser.add_argument('--max_samples', type=int, default=100000)
@@ -64,6 +64,7 @@ def main_triplet():
     model = train_triplet_model(dataset, batch_size=args.batch_size, epochs=args.epochs, device=device)
 
     results = evaluate_model(model, test_q, test_a, device=device, batch_size=args.batch_size)
+    print(results)
     with open("triplet_trainer_results.json", "w") as f:
         json.dump(results, f, indent=4)
 
