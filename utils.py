@@ -148,3 +148,51 @@ def create_triplet_pairs(questions: List[str],
         negatives.append(answers[neg_idx])
     
     return anchors, positives, negatives 
+
+
+from datasets import Dataset
+import torch
+
+def create_contrastive_dataset(questions, answers, labels, tokenizer):
+    def tokenize(example):
+        tokens_1 = tokenizer(example['text1'], truncation=True, padding="max_length", max_length=128)
+        tokens_2 = tokenizer(example['text2'], truncation=True, padding="max_length", max_length=128)
+        return {
+            'input_ids': tokens_1['input_ids'],
+            'attention_mask': tokens_1['attention_mask'],
+            'input_ids_2': tokens_2['input_ids'],
+            'attention_mask_2': tokens_2['attention_mask'],
+            'labels': example['label']
+        }
+
+    data = [{'text1': q, 'text2': a, 'label': float(l)} for q, a, l in zip(questions, answers, labels)][:100]
+    dataset = Dataset.from_list(data)
+    dataset = dataset.map(tokenize, batched=False)
+    dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'input_ids_2', 'attention_mask_2', 'labels'])
+    return dataset
+
+def create_triplet_dataset(anchors, positives, negatives, tokenizer):
+    def tokenize(example):
+        anc = tokenizer(example['anchor'], truncation=True, padding="max_length", max_length=128)
+        pos = tokenizer(example['positive'], truncation=True, padding="max_length", max_length=128)
+        neg = tokenizer(example['negative'], truncation=True, padding="max_length", max_length=128)
+        return {
+            'input_ids': anc['input_ids'],
+            'attention_mask': anc['attention_mask'],
+            'input_ids_pos': pos['input_ids'],
+            'attention_mask_pos': pos['attention_mask'],
+            'input_ids_neg': neg['input_ids'],
+            'attention_mask_neg': neg['attention_mask'],
+            'labels': 0.0  # Dummy label for Trainer compatibility
+        }
+
+    data = [{'anchor': a, 'positive': p, 'negative': n} for a, p, n in zip(anchors, positives, negatives)]
+    dataset = Dataset.from_list(data)
+    dataset = dataset.map(tokenize, batched=False)
+    dataset.set_format(type='torch', columns=[
+        'input_ids', 'attention_mask',
+        'input_ids_pos', 'attention_mask_pos',
+        'input_ids_neg', 'attention_mask_neg',
+        'labels'
+    ])
+    return dataset
