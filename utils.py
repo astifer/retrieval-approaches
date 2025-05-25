@@ -143,3 +143,37 @@ def create_triplet_dataset(anchors, positives, negatives, tokenizer):
         'labels'
     ])
     return dataset
+
+@torch.no_grad()
+def evaluate_model(model, test_questions, test_answers, device='cuda', batch_size=8):
+    from metrics import batch_recall_at_k, batch_mrr
+    print(f"Evaluationg model...")
+    model.eval()
+    model = model.to(device)
+    
+    q_embeddings = []
+    for i in range(0, len(test_questions), batch_size):
+        q_batch = test_questions[i:i+batch_size]
+        q_emb = model.encode(q_batch, device=device)
+        q_embeddings.append(q_emb.cpu())
+    q_embeddings = torch.cat(q_embeddings).numpy()
+    
+    a_embeddings = []
+    for i in range(0, len(test_answers), batch_size):
+        a_batch = test_answers[i:i+batch_size]
+        a_emb = model.encode(a_batch, device=device)
+        a_embeddings.append(a_emb.cpu())
+    a_embeddings = torch.cat(a_embeddings).numpy()
+
+    print("Computing cosine similarity..")
+    sim_matrix = compute_cosine_similarity(q_embeddings, a_embeddings)
+    print("Getting top k predictions...")
+    predictions = get_top_k_predictions(sim_matrix, k=10)
+    ground_truth = np.arange(len(test_questions))
+
+    return {
+        "recall@1": float(batch_recall_at_k(ground_truth, predictions, k=1)),
+        "recall@3": float(batch_recall_at_k(ground_truth, predictions, k=3)),
+        "recall@10": float(batch_recall_at_k(ground_truth, predictions, k=10)),
+        "mrr": float(batch_mrr(ground_truth, predictions)),
+    }

@@ -15,45 +15,11 @@ from utils import (
     create_triplet_pairs,
     compute_cosine_similarity,
     get_top_k_predictions,
-    create_contrastive_dataset
+    create_contrastive_dataset,
+    evaluate_model
 )
 
-
-@torch.no_grad()
-def evaluate_model(model, test_questions, test_answers, device='cuda', batch_size=8):
-    print(f"Evaluationg model...")
-    model.eval()
-    model = model.to(device)
-    
-    q_embeddings = []
-    for i in range(0, len(test_questions), batch_size):
-        q_batch = test_questions[i:i+batch_size]
-        q_emb = model.encode(q_batch, device=device)
-        q_embeddings.append(q_emb.cpu())
-    q_embeddings = torch.cat(q_embeddings).numpy()
-    
-    a_embeddings = []
-    for i in range(0, len(test_answers), batch_size):
-        a_batch = test_answers[i:i+batch_size]
-        a_emb = model.encode(a_batch, device=device)
-        a_embeddings.append(a_emb.cpu())
-    a_embeddings = torch.cat(a_embeddings).numpy()
-
-    print("Computing cosine similarity..")
-    sim_matrix = compute_cosine_similarity(q_embeddings, a_embeddings)
-    print("Getting top k predictions...")
-    predictions = get_top_k_predictions(sim_matrix, k=10)
-    ground_truth = np.arange(len(test_questions))
-
-    return {
-        "recall@1": float(batch_recall_at_k(ground_truth, predictions, k=1)),
-        "recall@3": float(batch_recall_at_k(ground_truth, predictions, k=3)),
-        "recall@10": float(batch_recall_at_k(ground_truth, predictions, k=10)),
-        "mrr": float(batch_mrr(ground_truth, predictions)),
-    }
-
-
-def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=3, device='cuda'):
+def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=1, device='cuda'):
     model = ContrastiveModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -79,7 +45,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--batch_size', type=int, default=8)
-    parser.add_argument('--epochs', type=int, default=2)
+    parser.add_argument('--epochs', type=int, default=1)
     parser.add_argument('--n_pairs', type=int, default=50000)
     parser.add_argument('--max_samples', type=int, default=100000)
     args = parser.parse_args()
