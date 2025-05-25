@@ -165,7 +165,7 @@ def create_contrastive_dataset(questions, answers, labels, tokenizer):
             'labels': example['label']
         }
 
-    data = [{'text1': q, 'text2': a, 'label': float(l)} for q, a, l in zip(questions, answers, labels)][:100]
+    data = [{'text1': q, 'text2': a, 'label': float(l)} for q, a, l in zip(questions, answers, labels)]
     dataset = Dataset.from_list(data)
     dataset = dataset.map(tokenize, batched=False)
     dataset.set_format(type='torch', columns=['input_ids', 'attention_mask', 'input_ids_2', 'attention_mask_2', 'labels'])
