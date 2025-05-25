@@ -60,7 +60,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-small')
     dataset = create_contrastive_dataset(q_pairs, a_pairs, labels, tokenizer)
     
-    device = device
+    device = args.device
     if not torch.cuda.is_available():
         device = 'cpu'
 

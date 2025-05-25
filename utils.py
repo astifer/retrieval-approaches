@@ -132,7 +132,7 @@ def create_triplet_dataset(anchors, positives, negatives, tokenizer):
             'attention_mask_neg': neg['attention_mask'],
             'labels': 0.0  # Dummy label for Trainer compatibility
         }
-
+    print('Creating triplet dataset...')
     data = [{'anchor': a, 'positive': p, 'negative': n} for a, p, n in zip(anchors, positives, negatives)]
     dataset = Dataset.from_list(data)
     dataset = dataset.map(tokenize, batched=False)

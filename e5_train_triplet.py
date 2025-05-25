@@ -16,7 +16,8 @@ from utils import (
     evaluate_model
 )
 
-def train_triplet_model(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./triplet_model', batch_size=32, epochs=3):
+def train_triplet_model(train_dataset, model_name='intfloat/multilingual-e5-base', output_dir='./triplet_model', batch_size=32, epochs=3, device='cuda'):
+    print("Train model...")
     model = TripletModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -26,6 +27,7 @@ def train_triplet_model(train_dataset, model_name='intfloat/multilingual-e5-base
         logging_steps=50,
         save_total_limit=1,
         remove_unused_columns=False,
+        device=device
     )
     trainer = Trainer(
         model=model,
@@ -57,9 +59,12 @@ def main_triplet():
     tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-base')
     dataset = create_triplet_dataset(anchors, positives, negatives, tokenizer)
 
-    model = train_triplet_model(dataset, batch_size=args.batch_size, epochs=args.epochs)
+    device = args.device
+    if not torch.cuda.is_available():
+        device = 'cpu'
+    model = train_triplet_model(dataset, batch_size=args.batch_size, epochs=args.epochs, device=device)
 
-    results = evaluate_model(model, test_q, test_a, device=args.device, batch_size=args.batch_size)
+    results = evaluate_model(model, test_q, test_a, device=device, batch_size=args.batch_size)
     with open("triplet_trainer_results.json", "w") as f:
         json.dump(results, f, indent=4)
 
