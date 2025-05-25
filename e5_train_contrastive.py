@@ -53,7 +53,7 @@ def evaluate_model(model, test_questions, test_answers, device='cuda', batch_siz
     }
 
 
-def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=3):
+def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small', output_dir='./contrastive_model', batch_size=8, epochs=3, device='cuda'):
     model = ContrastiveModel(model_name=model_name)
     training_args = TrainingArguments(
         output_dir=output_dir,
@@ -63,6 +63,7 @@ def train_with_trainer(train_dataset, model_name='intfloat/multilingual-e5-small
         logging_steps=50,
         save_total_limit=1,
         remove_unused_columns=False,
+        device=device
     )
     trainer = Trainer(
         model=model,
@@ -92,9 +93,13 @@ def main():
     q_pairs, a_pairs, labels = create_contrastive_pairs(train_q, train_a, args.n_pairs)
     tokenizer = AutoTokenizer.from_pretrained('intfloat/multilingual-e5-small')
     dataset = create_contrastive_dataset(q_pairs, a_pairs, labels, tokenizer)
-    model = train_with_trainer(dataset, batch_size=args.batch_size, epochs=args.epochs)
+    
+    device = device
+    if not torch.cuda.is_available():
+        device = 'cpu'
 
-    results = evaluate_model(model, test_q, test_a, device=args.device, batch_size=args.batch_size)
+    model = train_with_trainer(dataset, batch_size=args.batch_size, epochs=args.epochs, device=device)
+    results = evaluate_model(model, test_q, test_a, device=device, batch_size=args.batch_size)
     print(results)
     with open("contrastive_trainer_results.json", "w") as f:
         json.dump(results, f, indent=4)
